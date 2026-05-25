@@ -9,7 +9,6 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,24 +20,15 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Run unit tests
-        run: mvn test -Punit-tests
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      - name: Build and run tests
+        run: mvn clean verify -Dspring.profiles.active=test
 
-      - name: Run integration tests (Testcontainers)
-        run: mvn verify -Pintegration-tests
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-
-      - name: Generate coverage report
-        run: mvn jacoco:report
-
-      - name: Upload coverage report
+      - name: Upload test results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: jacoco-report
-          path: target/site/jacoco/
+          name: test-results
+          path: target/surefire-reports/
 
       - name: Build Docker image
         run: docker build -t spring-ai-rag-demo:${{ github.sha }} .
